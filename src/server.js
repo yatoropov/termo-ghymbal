@@ -1,7 +1,21 @@
 const express = require('express');
 const session = require('express-session');
+require('dotenv').config();
 const passport = require('./auth');
+const path = require('path');
+
 const app = express();
+
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Сервіс статичних файлів для фронтенду
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Кореневий маршрут — автоматичний редирект на Google OAuth
 app.get('/', (req, res) => {
@@ -13,15 +27,12 @@ app.get('/login', (req, res) => {
   res.redirect('/auth/google');
 });
 
-
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: true
-}));
-
-app.use(passport.initialize());
-app.use(passport.session());
+// Logout
+app.get('/logout', (req, res) => {
+  req.logout(() => {
+    res.redirect('/');
+  });
+});
 
 // Маршрути для аутентифікації
 app.get('/auth/google',
@@ -31,14 +42,14 @@ app.get('/auth/google',
 app.get('/auth/google/callback', 
   passport.authenticate('google', { failureRedirect: '/login' }),
   function(req, res) {
-    // Успішна аутентифікація, перенаправлення на панель керування.
     res.redirect('/panel');
   }
 );
 
 // Захищений маршрут
 app.get('/panel', ensureAuthenticated, function(req, res){
-  res.send(`Привіт, ${req.user.displayName}`);
+  // Надсилаємо panel.html (або можна згенерований HTML)
+  res.sendFile(path.join(__dirname, '..', 'public', 'panel.html'));
 });
 
 function ensureAuthenticated(req, res, next) {
@@ -46,16 +57,16 @@ function ensureAuthenticated(req, res, next) {
   res.redirect('/login');
 }
 
-app.listen(8080, () => {
-  console.log('Сервер запущено на https та http:8080');
-});
-
-app.get('/api/user', auth, (req, res) => {
+// API для фронтенду
+app.get('/api/user', ensureAuthenticated, (req, res) => {
   res.json({ name: req.user.displayName || 'User' });
 });
 
-app.get('/api/status', auth, (req, res) => {
-  // Поки що фейкове значення:
+app.get('/api/status', ensureAuthenticated, (req, res) => {
   res.json({ value: 'OK (stub)' });
 });
 
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log('Сервер запущено на порту', PORT);
+});
