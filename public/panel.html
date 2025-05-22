@@ -2,28 +2,68 @@
 <html>
 <head>
   <title>Gimbal Control Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: sans-serif; background: #f9f9f9; margin: 0; padding: 0; }
+    .container { max-width: 480px; margin: 30px auto; background: #fff; border-radius: 14px; box-shadow: 0 2px 16px #0002; padding: 24px; }
+    .header { display: flex; justify-content: space-between; align-items: center; }
+    .status { font-size: 1.2em; margin-bottom: 16px; }
+    .controls { display: flex; justify-content: space-around; margin-bottom: 24px; }
+    button { font-size: 1.1em; border: none; border-radius: 6px; background: #f60; color: #fff; padding: 12px 20px; margin: 4px; cursor: pointer; }
+    button:active { background: #c50; }
+    .video { width: 100%; max-height: 220px; border-radius: 10px; background: #333; margin-bottom: 20px; }
+    .logout { color: #f60; text-decoration: none; }
+  </style>
 </head>
 <body>
-  <h1>Gimbal Control Panel</h1>
-  <form id="gimbal-form">
-    <input id="cmd" placeholder="Enter gimbal command" />
-    <button type="submit">Send</button>
-  </form>
-  <div id="result"></div>
-  <a href="/logout">Logout</a>
+  <div class="container">
+    <div class="header">
+      <div id="greeting">Hi, User!</div>
+      <a href="/logout" class="logout">Logout</a>
+    </div>
+
+    <div class="status" id="gimbal-status">
+      Gimbal status: <span id="status-value">---</span>
+    </div>
+
+    <div class="controls">
+      <button onclick="sendCmd('LEFT')">&#8592; Left</button>
+      <button onclick="sendCmd('UP')">&#8593; Up</button>
+      <button onclick="sendCmd('DOWN')">&#8595; Down</button>
+      <button onclick="sendCmd('RIGHT')">&#8594; Right</button>
+    </div>
+
+    <div class="video">
+      <!-- Пізніше тут буде <img src="..." /> або <video ...> -->
+      <div style="color: #fff; text-align:center; padding:80px 0 50px;">Camera preview soon</div>
+    </div>
+  </div>
 
   <script>
-    document.getElementById('gimbal-form').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const cmd = document.getElementById('cmd').value;
-      const res = await fetch('/api/gimbal', {
+    // Привітання з іменем юзера (запитуємо з сервера)
+    fetch('/api/user').then(r => r.json()).then(user => {
+      document.getElementById('greeting').textContent = `Hi, ${user.name}!`;
+    });
+
+    // Відображення статусу (можна реалізувати через WebSocket/MQTT, поки — емуляція)
+    function updateStatus() {
+      fetch('/api/status').then(r => r.json()).then(status => {
+        document.getElementById('status-value').textContent = status.value || 'No data';
+      });
+    }
+    setInterval(updateStatus, 2000); // Оновлюємо кожні 2 секунди
+
+    function sendCmd(cmd) {
+      fetch('/api/gimbal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: 'cmd=' + encodeURIComponent(cmd)
+      }).then(res => res.json()).then(data => {
+        // можна щось відобразити після натискання кнопки
       });
-      const json = await res.json();
-      document.getElementById('result').innerText = JSON.stringify(json);
-    });
+    }
+
+    updateStatus();
   </script>
 </body>
 </html>
