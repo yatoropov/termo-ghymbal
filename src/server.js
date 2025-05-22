@@ -3,6 +3,17 @@ const session = require('express-session');
 const passport = require('./auth');
 const app = express();
 
+// Кореневий маршрут — автоматичний редирект на Google OAuth
+app.get('/', (req, res) => {
+  res.redirect('/auth/google');
+});
+
+// Для сумісності зі старим UI — /login також веде на Google OAuth
+app.get('/login', (req, res) => {
+  res.redirect('/auth/google');
+});
+
+
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
