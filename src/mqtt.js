@@ -1,8 +1,9 @@
-// mqtt.js
 require('dotenv').config();
 const mqtt = require('mqtt');
 
-// Підключення до твого брокера (адреса і порт з .env)
+let lastStatus = 'OFF';      // значення статусу
+let lastStatusTime = 0;      // час останнього "OK"
+
 const mqttClient = mqtt.connect(process.env.MQTT_URL, {
   username: process.env.MQTT_USER,
   password: process.env.MQTT_PASS,
@@ -14,13 +15,26 @@ mqttClient.on('connect', () => {
 });
 
 mqttClient.on('message', (topic, message) => {
-  console.log(`MQTT message: ${topic} — ${message.toString()}`);
-  // Можеш сюди додати оновлення статусу для фронту через WebSocket або зберігати в змінній
+  if (topic === 'gimbal/status') {
+    if (message.toString().trim() === 'OK') {
+      lastStatus = 'OK';
+      lastStatusTime = Date.now();
+    }
+  }
 });
 
-// Функція для відправки команд ESP (публікація в топік)
+// функція, яка повертає поточний статус
+function getGimbalStatus() {
+  // Якщо останній "OK" не старше 5 сек — статус OK, інакше OFF
+  if (Date.now() - lastStatusTime < 5000) {
+    return { value: 'OK', color: 'green' };
+  } else {
+    return { value: 'OFF', color: 'red' };
+  }
+}
+
 function sendGimbalCommand(cmd) {
   mqttClient.publish('gimbal/cmd', cmd);
 }
 
-module.exports = { mqttClient, sendGimbalCommand };
+module.exports = { mqttClient, sendGimbalCommand, getGimbalStatus };
