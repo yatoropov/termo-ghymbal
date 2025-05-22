@@ -46,6 +46,10 @@ function ensureAuthenticated(req, res, next) {
   res.redirect('/login');
 }
 
+app.get('/api/user', auth, (req, res) => {
+  res.json({ name: req.user.displayName || 'User' });
+});
+
 app.listen(8080, () => {
-  console.log('Сервер запущено на порту 8080');
+  console.log('Сервер запущено на https та http:8080');
 });
