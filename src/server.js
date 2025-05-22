@@ -17,7 +17,9 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+
+// !!! Ось тут головна зміна:
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // ---- Utils ----
 function isAllowedUser(email) {
@@ -44,7 +46,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+  res.sendFile(path.join(__dirname, '..', 'public', 'login.html'));
 });
 
 app.post('/login/local', (req, res) => {
@@ -88,7 +90,7 @@ app.get('/logout', (req, res) => {
 
 // ---- Захищені роути ----
 app.get('/panel', ensureAuthenticated, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'panel.html'));
+  res.sendFile(path.join(__dirname, '..', 'public', 'panel.html'));
 });
 
 // API — ім'я юзера
