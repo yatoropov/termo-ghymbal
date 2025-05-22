@@ -1,68 +1,40 @@
-require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const bodyParser = require('body-parser');
-const path = require('path');
-const { auth, loginCheck } = require('./auth');
-const { sendGimbalCommand } = require('./mqtt');
-
+const passport = require('./auth');
 const app = express();
-const PORT = process.env.PORT || 8080;
 
-app.get('/', (req, res) => {
-  if (req.session && req.session.auth) {
-    res.redirect('/panel');
-  } else {
-    res.redirect('/login');
-  }
-});
-
-app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true
 }));
 
-app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use(passport.initialize());
+app.use(passport.session());
 
-// Login form
-app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'login.html'));
-});
+// Маршрути для аутентифікації
+app.get('/auth/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
 
-// Login logic
-app.post('/login', (req, res) => {
-  const { login, password } = req.body;
-  if (loginCheck(login, password)) {
-    req.session.auth = true;
+app.get('/auth/google/callback', 
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  function(req, res) {
+    // Успішна аутентифікація, перенаправлення на панель керування.
     res.redirect('/panel');
-  } else {
-    res.send('Invalid login or password <a href="/login">Try again</a>');
   }
+);
+
+// Захищений маршрут
+app.get('/panel', ensureAuthenticated, function(req, res){
+  res.send(`Привіт, ${req.user.displayName}`);
 });
 
-// Panel (protected)
-app.get('/panel', auth, (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'panel.html'));
-});
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) { return next(); }
+  res.redirect('/login');
+}
 
-// Logout
-app.get('/logout', (req, res) => {
-  req.session.destroy(() => res.redirect('/login'));
-});
-
-// Gimbal control API (protected)
-app.post('/api/gimbal', auth, (req, res) => {
-  const { cmd } = req.body;
-  if (cmd) {
-    sendGimbalCommand(cmd);
-    res.json({ status: 'ok', cmd });
-  } else {
-    res.json({ status: 'error', message: 'No command' });
-  }
-});
-
-app.listen(PORT, () => {
-  console.log(`Server started on port ${PORT}`);
+app.listen(8080, () => {
+  console.log('Сервер запущено на порту 8080');
 });
