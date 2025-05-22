@@ -1,12 +1,22 @@
-require('dotenv').config();
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
-function auth(req, res, next) {
-  if (req.session && req.session.auth) return next();
-  res.redirect('/login');
-}
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: '/auth/google/callback'
+},
+function(accessToken, refreshToken, profile, done) {
+  // Збережіть або обробіть профіль користувача тут
+  return done(null, profile);
+}));
 
-function loginCheck(login, password) {
-  return login === process.env.ADMIN_LOGIN && password === process.env.ADMIN_PASS;
-}
+passport.serializeUser(function(user, done) {
+  done(null, user);
+});
 
-module.exports = { auth, loginCheck };
+passport.deserializeUser(function(obj, done) {
+  done(null, obj);
+});
+
+module.exports = passport;
