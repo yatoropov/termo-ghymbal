@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Gimbal Control Panel</title>
+</head>
+<body>
+  <h1>Gimbal Control Panel</h1>
+  <form id="gimbal-form">
+    <input id="cmd" placeholder="Enter gimbal command" />
+    <button type="submit">Send</button>
+  </form>
+  <div id="result"></div>
+  <a href="/logout">Logout</a>
+
+  <script>
+    document.getElementById('gimbal-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const cmd = document.getElementById('cmd').value;
+      const res = await fetch('/api/gimbal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'cmd=' + encodeURIComponent(cmd)
+      });
+      const json = await res.json();
+      document.getElementById('result').innerText = JSON.stringify(json);
+    });
+  </script>
+</body>
+</html>
