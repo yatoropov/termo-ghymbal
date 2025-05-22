@@ -3,7 +3,10 @@ require('dotenv').config();
 const mqtt = require('mqtt');
 
 // Підключення до твого брокера (адреса і порт з .env)
-const mqttClient = mqtt.connect(process.env.MQTT_URL);
+const mqttClient = mqtt.connect(process.env.MQTT_URL, {
+  username: process.env.MQTT_USER,
+  password: process.env.MQTT_PASS,
+});
 
 mqttClient.on('connect', () => {
   console.log('Connected to MQTT broker');
