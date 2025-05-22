@@ -47,10 +47,11 @@
 
     // Відображення статусу (можна реалізувати через WebSocket/MQTT, поки — емуляція)
     function updateStatus() {
-      fetch('/api/status').then(r => r.json()).then(status => {
-        document.getElementById('status-value').textContent = status.value || 'No data';
-      });
-    }
+  fetch('/api/status').then(r => r.json()).then(status => {
+    document.getElementById('status-value').textContent = status.value || 'No data';
+    document.getElementById('status-value').style.color = status.color || 'black';
+  });
+}
     setInterval(updateStatus, 2000); // Оновлюємо кожні 2 секунди
 
     function sendCmd(cmd) {
