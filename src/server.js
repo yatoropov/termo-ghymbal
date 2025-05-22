@@ -4,6 +4,7 @@ const session = require('express-session');
 const passport = require('./auth');
 const path = require('path');
 const bodyParser = require('body-parser');
+const { sendGimbalCommand } = require('./mqtt'); // Підключаємо mqtt.js
 
 const app = express();
 
@@ -16,8 +17,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(bodyParser.urlencoded({ extended: true }));
-
-app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ---- Utils ----
 function isAllowedUser(email) {
@@ -28,7 +28,6 @@ function isAllowedUser(email) {
 }
 
 function ensureAuthenticated(req, res, next) {
-  // Доступ мають або локально залогінені, або Google-юзери з allow-list
   if (req.session.auth) return next();
   if (req.isAuthenticated()) {
     if (!isAllowedUser(req.user.emails[0].value)) {
@@ -40,18 +39,14 @@ function ensureAuthenticated(req, res, next) {
 }
 
 // ---- Роути ----
-
-// Головна сторінка — редирект на логін
 app.get('/', (req, res) => {
   res.redirect('/login');
 });
 
-// Сторінка логіну з формою
 app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'login.html'));
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// Локальний логін (admin)
 app.post('/login/local', (req, res) => {
   const { login, password } = req.body;
   if (
@@ -62,7 +57,6 @@ app.post('/login/local', (req, res) => {
     req.session.displayName = login;
     return res.redirect('/panel');
   }
-  // Можна красиво обробити error через query
   res.redirect('/login?error=1');
 });
 
@@ -74,7 +68,6 @@ app.get('/auth/google',
 app.get('/auth/google/callback',
   passport.authenticate('google', { failureRedirect: '/login' }),
   function(req, res) {
-    // Перевіряємо чи дозволено цього користувача
     if (!isAllowedUser(req.user.emails[0].value)) {
       req.logout(() => {
         res.status(403).send('<h2>Вибачте, ви не маєте доступу!</h2>');
@@ -85,7 +78,6 @@ app.get('/auth/google/callback',
   }
 );
 
-// Логаут
 app.get('/logout', (req, res) => {
   req.logout(() => {
     req.session.destroy(() => {
@@ -95,13 +87,11 @@ app.get('/logout', (req, res) => {
 });
 
 // ---- Захищені роути ----
-
 app.get('/panel', ensureAuthenticated, (req, res) => {
-  // Віддаємо панель (frontend)
-  res.sendFile(path.join(__dirname, '..', 'public', 'panel.html'));
+  res.sendFile(path.join(__dirname, 'public', 'panel.html'));
 });
 
-// API — ім'я юзера (для відображення у фронті)
+// API — ім'я юзера
 app.get('/api/user', ensureAuthenticated, (req, res) => {
   let name = 'User';
   if (req.session.auth) {
@@ -112,9 +102,19 @@ app.get('/api/user', ensureAuthenticated, (req, res) => {
   res.json({ name });
 });
 
-// API — статус гімбалу (зараз фейковий)
+// API — статус гімбалу (stub, можна оновити потім)
 app.get('/api/status', ensureAuthenticated, (req, res) => {
   res.json({ value: 'OK (stub)' });
+});
+
+// API для ESP — передаємо команду на MQTT
+app.post('/api/gimbal', ensureAuthenticated, (req, res) => {
+  const { cmd } = req.body;
+  if (!cmd || !['LEFT', 'RIGHT', 'UP', 'DOWN'].includes(cmd)) {
+    return res.status(400).json({ ok: false, error: 'Invalid command' });
+  }
+  sendGimbalCommand(cmd.toLowerCase());
+  res.json({ ok: true });
 });
 
 const PORT = process.env.PORT || 8080;
