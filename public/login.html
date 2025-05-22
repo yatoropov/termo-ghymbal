@@ -4,31 +4,130 @@
   <title>Login - Termo-Ghymbal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: sans-serif; background: #f9f9f9; margin: 0; }
-    .card { max-width: 360px; margin: 60px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px #0002; padding: 30px 24px 24px; }
-    h2 { text-align: center; }
-    input, button { width: 100%; margin: 10px 0; padding: 12px; font-size: 1.1em; border-radius: 6px; border: 1px solid #ddd; }
-    .oauth-btn { background: #4285F4; color: #fff; border: none; }
-    .oauth-btn:hover { background: #3367d6; }
-    .sep { text-align: center; color: #888; margin: 16px 0; }
-    .err { color: #e22; font-size: 1em; text-align: center; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f6f8fb; margin: 0; }
+    .card {
+      max-width: 390px;
+      margin: 60px auto;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 4px 28px #0001;
+      padding: 34px 30px 30px;
+      position: relative;
+    }
+    .logo {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .logo img {
+      width: 48px; height: 48px; border-radius: 14px;
+      box-shadow: 0 1px 8px #f60a;
+      background: #fff;
+    }
+    h2 {
+      text-align: center;
+      margin: 0 0 14px;
+      font-weight: 700;
+      color: #323c4b;
+    }
+    input, button {
+      width: 100%;
+      margin: 10px 0 0;
+      padding: 13px;
+      font-size: 1.06em;
+      border-radius: 7px;
+      border: 1px solid #d0d4df;
+      box-sizing: border-box;
+    }
+    button {
+      background: #f66000;
+      color: #fff;
+      border: none;
+      margin-bottom: 5px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    button:active { background: #d14f00; }
+    .sep {
+      text-align: center;
+      color: #999;
+      margin: 20px 0 12px;
+      position: relative;
+    }
+    .sep:before, .sep:after {
+      content: "";
+      display: inline-block;
+      width: 35%;
+      height: 1px;
+      background: #eee;
+      vertical-align: middle;
+      margin: 0 7px;
+    }
+    .google-btn {
+      background: #fff;
+      color: #444;
+      border: 1.5px solid #eee;
+      box-shadow: 0 1px 6px #0001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 1.08em;
+      margin-top: 2px;
+      transition: box-shadow .15s;
+    }
+    .google-btn img {
+      width: 22px; height: 22px;
+      background: #fff;
+      border-radius: 50%;
+      margin-right: 4px;
+    }
+    .google-btn:hover {
+      box-shadow: 0 4px 16px #8882;
+      border: 1.5px solid #ccc;
+    }
+    .err {
+      color: #d32f2f;
+      font-size: 1.05em;
+      text-align: center;
+      margin-top: 14px;
+      background: #fff6f6;
+      padding: 8px 0 7px;
+      border-radius: 7px;
+      border: 1px solid #ffd7d7;
+    }
   </style>
 </head>
 <body>
   <div class="card">
+    <div class="logo">
+      <img src="/logo.png" alt="Logo">
+    </div>
     <h2>Sign in to Termo-Ghymbal</h2>
-    <form method="POST" action="/login/local">
-      <input name="login" placeholder="Login" required>
-      <input name="password" type="password" placeholder="Password" required>
+    <form method="POST" action="/login/local" autocomplete="off">
+      <input name="login" placeholder="Login" autocomplete="username" required>
+      <input name="password" type="password" placeholder="Password" autocomplete="current-password" required>
       <button type="submit">Sign in</button>
     </form>
     <div class="sep">or</div>
     <form method="GET" action="/auth/google">
-      <button class="oauth-btn" type="submit">Sign in with Google</button>
+      <button class="google-btn" type="submit">
+        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" alt="">
+        Sign in with Google
+      </button>
     </form>
-    <% if (error) { %>
-    <div class="err"><%= error %></div>
-    <% } %>
+    <!-- Можна додати простий error з query-параметру -->
+    <div class="err" id="err" style="display:none;">Wrong login or password!</div>
   </div>
+  <script>
+    // Відобразити помилку при ?error=1
+    if (window.location.search.includes('error=1')) {
+      document.getElementById('err').style.display = 'block';
+    }
+  </script>
 </body>
 </html>
