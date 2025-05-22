@@ -5,6 +5,7 @@ const passport = require('./auth');
 const path = require('path');
 const bodyParser = require('body-parser');
 const { sendGimbalCommand } = require('./mqtt'); // Підключаємо mqtt.js
+const { getGimbalStatus } = require('./mqtt'); // Connection Status Ghymbal
 
 const app = express();
 
@@ -106,7 +107,7 @@ app.get('/api/user', ensureAuthenticated, (req, res) => {
 
 // API — статус гімбалу (stub, можна оновити потім)
 app.get('/api/status', ensureAuthenticated, (req, res) => {
-  res.json({ value: 'OK (stub)' });
+  res.json(getGimbalStatus());
 });
 
 // API для ESP — передаємо команду на MQTT
