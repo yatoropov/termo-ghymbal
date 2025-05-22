@@ -1,11 +1,13 @@
+require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-require('dotenv').config();
 const passport = require('./auth');
 const path = require('path');
+const bodyParser = require('body-parser');
 
 const app = express();
 
+// ---- Middleware ----
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
@@ -13,55 +15,104 @@ app.use(session({
 }));
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-// Сервіс статичних файлів для фронтенду
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-// Кореневий маршрут — автоматичний редирект на Google OAuth
+// ---- Utils ----
+function isAllowedUser(email) {
+  const allowed = process.env.ALLOWED_USERS
+    ? process.env.ALLOWED_USERS.split(',').map(e => e.trim().toLowerCase())
+    : [];
+  return allowed.includes(email.toLowerCase());
+}
+
+function ensureAuthenticated(req, res, next) {
+  // Доступ мають або локально залогінені, або Google-юзери з allow-list
+  if (req.session.auth) return next();
+  if (req.isAuthenticated()) {
+    if (!isAllowedUser(req.user.emails[0].value)) {
+      return res.status(403).send('<h2>Вибачте, ви не маєте доступу!</h2>');
+    }
+    return next();
+  }
+  res.redirect('/login');
+}
+
+// ---- Роути ----
+
+// Головна сторінка — редирект на логін
 app.get('/', (req, res) => {
-  res.redirect('/auth/google');
+  res.redirect('/login');
 });
 
-// Для сумісності зі старим UI — /login також веде на Google OAuth
+// Сторінка логіну з формою
 app.get('/login', (req, res) => {
-  res.redirect('/auth/google');
+  res.sendFile(path.join(__dirname, '..', 'public', 'login.html'));
 });
 
-// Logout
-app.get('/logout', (req, res) => {
-  req.logout(() => {
-    res.redirect('/');
-  });
+// Локальний логін (admin)
+app.post('/login/local', (req, res) => {
+  const { login, password } = req.body;
+  if (
+    login === process.env.ADMIN_LOGIN &&
+    password === process.env.ADMIN_PASS
+  ) {
+    req.session.auth = true;
+    req.session.displayName = login;
+    return res.redirect('/panel');
+  }
+  // Можна красиво обробити error через query
+  res.redirect('/login?error=1');
 });
 
-// Маршрути для аутентифікації
+// Google OAuth 2.0
 app.get('/auth/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
 );
 
-app.get('/auth/google/callback', 
+app.get('/auth/google/callback',
   passport.authenticate('google', { failureRedirect: '/login' }),
   function(req, res) {
-    res.redirect('/panel');
+    // Перевіряємо чи дозволено цього користувача
+    if (!isAllowedUser(req.user.emails[0].value)) {
+      req.logout(() => {
+        res.status(403).send('<h2>Вибачте, ви не маєте доступу!</h2>');
+      });
+    } else {
+      res.redirect('/panel');
+    }
   }
 );
 
-// Захищений маршрут
-app.get('/panel', ensureAuthenticated, function(req, res){
-  // Надсилаємо panel.html (або можна згенерований HTML)
+// Логаут
+app.get('/logout', (req, res) => {
+  req.logout(() => {
+    req.session.destroy(() => {
+      res.redirect('/login');
+    });
+  });
+});
+
+// ---- Захищені роути ----
+
+app.get('/panel', ensureAuthenticated, (req, res) => {
+  // Віддаємо панель (frontend)
   res.sendFile(path.join(__dirname, '..', 'public', 'panel.html'));
 });
 
-function ensureAuthenticated(req, res, next) {
-  if (req.isAuthenticated()) { return next(); }
-  res.redirect('/login');
-}
-
-// API для фронтенду
+// API — ім'я юзера (для відображення у фронті)
 app.get('/api/user', ensureAuthenticated, (req, res) => {
-  res.json({ name: req.user.displayName || 'User' });
+  let name = 'User';
+  if (req.session.auth) {
+    name = req.session.displayName || 'Admin';
+  } else if (req.isAuthenticated()) {
+    name = req.user.displayName || req.user.emails[0].value;
+  }
+  res.json({ name });
 });
 
+// API — статус гімбалу (зараз фейковий)
 app.get('/api/status', ensureAuthenticated, (req, res) => {
   res.json({ value: 'OK (stub)' });
 });
