@@ -9,6 +9,14 @@ const { sendGimbalCommand } = require('./mqtt');
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+app.get('/', (req, res) => {
+  if (req.session && req.session.auth) {
+    res.redirect('/panel');
+  } else {
+    res.redirect('/login');
+  }
+});
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
   secret: process.env.SESSION_SECRET,
