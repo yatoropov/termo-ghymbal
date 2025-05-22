@@ -1,22 +1,22 @@
+// mqtt.js
 require('dotenv').config();
 const mqtt = require('mqtt');
 
+// Підключення до твого брокера (адреса і порт з .env)
 const mqttClient = mqtt.connect(process.env.MQTT_URL);
 
 mqttClient.on('connect', () => {
   console.log('Connected to MQTT broker');
-  // Підпишися на потрібні топіки, якщо треба!
   mqttClient.subscribe('gimbal/status');
 });
 
 mqttClient.on('message', (topic, message) => {
-  // Обробка вхідних повідомлень
   console.log(`MQTT message: ${topic} — ${message.toString()}`);
-  // Додай тут пересилку на WebSocket, якщо треба.
+  // Можеш сюди додати оновлення статусу для фронту через WebSocket або зберігати в змінній
 });
 
+// Функція для відправки команд ESP (публікація в топік)
 function sendGimbalCommand(cmd) {
-  // Надіслати команду на ESP32
   mqttClient.publish('gimbal/cmd', cmd);
 }
 
