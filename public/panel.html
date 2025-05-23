@@ -4,15 +4,65 @@
   <title>Gimbal Control Panel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: sans-serif; background: #f9f9f9; margin: 0; padding: 0; }
-    .container { max-width: 480px; margin: 30px auto; background: #fff; border-radius: 14px; box-shadow: 0 2px 16px #0002; padding: 24px; }
-    .header { display: flex; justify-content: space-between; align-items: center; }
-    .status { font-size: 1.2em; margin-bottom: 16px; }
-    .controls { display: flex; justify-content: space-around; margin-bottom: 24px; }
-    button { font-size: 1.1em; border: none; border-radius: 6px; background: #f60; color: #fff; padding: 12px 20px; margin: 4px; cursor: pointer; }
-    button:active { background: #c50; }
-    .video { width: 100%; max-height: 220px; border-radius: 10px; background: #333; margin-bottom: 20px; }
-    .logout { color: #f60; text-decoration: none; }
+    body {
+      font-family: sans-serif;
+      background: #f9f9f9;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 480px;
+      margin: 30px auto;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 2px 16px #0002;
+      padding: 24px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .status {
+      font-size: 1.2em;
+      margin-bottom: 16px;
+    }
+    .controls {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 24px;
+    }
+    button {
+      font-size: 1.1em;
+      border: none;
+      border-radius: 6px;
+      background: #f60;
+      color: #fff;
+      padding: 12px 20px;
+      margin: 4px;
+      cursor: pointer;
+    }
+    button:active {
+      background: #c50;
+    }
+    .video {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #000;
+      margin-bottom: 20px;
+    }
+    .video video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .logout {
+      color: #f60;
+      text-decoration: none;
+    }
   </style>
 </head>
 <body>
@@ -34,9 +84,10 @@
     </div>
 
     <div class="video">
-      <!-- Пізніше тут буде <img src="..." /> або <video ...> -->
-      <iframe src="https://hall.pp.ua:8889/mystream" width="100%" frameborder="0" allowfullscreen></iframe>
-      <div style="color: #fff; text-align:center; padding:80px 0 50px;">Camera preview soon</div>
+      <video autoplay muted playsinline>
+        <source src="https://34.66.209.184:8889/mystream" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
     </div>
   </div>
 
@@ -48,11 +99,11 @@
 
     // Відображення статусу (можна реалізувати через WebSocket/MQTT, поки — емуляція)
     function updateStatus() {
-  fetch('/api/status').then(r => r.json()).then(status => {
-    document.getElementById('status-value').textContent = status.value || 'No data';
-    document.getElementById('status-value').style.color = status.color || 'black';
-  });
-}
+      fetch('/api/status').then(r => r.json()).then(status => {
+        document.getElementById('status-value').textContent = status.value || 'No data';
+        document.getElementById('status-value').style.color = status.color || 'black';
+      });
+    }
     setInterval(updateStatus, 2000); // Оновлюємо кожні 2 секунди
 
     function sendCmd(cmd) {
