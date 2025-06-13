@@ -120,7 +120,7 @@ app.post('/api/gimbal', ensureAuthenticated, (req, res) => {
   res.json({ ok: true });
 });
 
-const PORT = process.env.PORT || 8081;
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log('Сервер запущено на порту', PORT);
 });
