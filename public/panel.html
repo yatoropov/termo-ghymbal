@@ -78,12 +78,25 @@
       Gimbal status: <span id="status-value">---</span>
     </div>
 
-    <div class="controls">
-      <button onclick="sendCmd('LEFT')">&#8592; Left</button>
-      <button onclick="sendCmd('UP')">&#8593; Up</button>
-      <button onclick="sendCmd('DOWN')">&#8595; Down</button>
-      <button onclick="sendCmd('RIGHT')">&#8594; Right</button>
-    </div>
+   <div class="speed-select" style="display: flex; justify-content: center; gap: 18px; margin-bottom: 18px;">
+  <label><input type="radio" name="speed" value="slow"> Slow</label>
+  <label><input type="radio" name="speed" value="mid" checked> Mid</label>
+  <label><input type="radio" name="speed" value="fast"> Fast</label>
+</div>
+<div class="dpad" style="display: grid; grid-template-areas:
+        '. up .'
+        'left . right'
+        '. down .';
+      grid-template-columns: 64px 64px 64px;
+      grid-template-rows: 64px 64px 64px;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 24px;">
+  <button class="dpad-btn up" style="grid-area: up;" onclick="sendCmd('UP')">&#8593;</button>
+  <button class="dpad-btn left" style="grid-area: left;" onclick="sendCmd('LEFT')">&#8592;</button>
+  <button class="dpad-btn right" style="grid-area: right;" onclick="sendCmd('RIGHT')">&#8594;</button>
+  <button class="dpad-btn down" style="grid-area: down;" onclick="sendCmd('DOWN')">&#8595;</button>
+</div>
 
 <!--div class="video">
   <iframe src="https://hall.pp.ua:8889/mystream" allowfullscreen></iframe>
@@ -105,15 +118,14 @@
     }
     setInterval(updateStatus, 2000); // Оновлюємо кожні 2 секунди
 
-    function sendCmd(cmd) {
-      fetch('/api/gimbal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'cmd=' + encodeURIComponent(cmd)
-      }).then(res => res.json()).then(data => {
-        // можна щось відобразити після натискання кнопки
-      });
-    }
+function sendCmd(cmd) {
+  const speed = document.querySelector('input[name="speed"]:checked').value;
+  fetch('/api/gimbal', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'cmd=' + encodeURIComponent(cmd) + '&speed=' + encodeURIComponent(speed)
+  }).then(res => res.json());
+}
 
     updateStatus();
   </script>

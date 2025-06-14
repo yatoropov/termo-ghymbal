@@ -111,12 +111,14 @@ app.get('/api/status', ensureAuthenticated, (req, res) => {
 });
 
 // API для ESP — передаємо команду на MQTT
+
 app.post('/api/gimbal', ensureAuthenticated, (req, res) => {
-  const { cmd } = req.body;
+  const { cmd, speed } = req.body;
   if (!cmd || !['LEFT', 'RIGHT', 'UP', 'DOWN'].includes(cmd)) {
     return res.status(400).json({ ok: false, error: 'Invalid command' });
   }
-  sendGimbalCommand(cmd.toLowerCase());
+  // додай швидкість: left:mid, up:fast тощо
+  sendGimbalCommand(cmd.toLowerCase() + (speed ? ':' + speed : ''));
   res.json({ ok: true });
 });
 
